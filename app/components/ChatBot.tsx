@@ -158,19 +158,33 @@ export default function ChatBot() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rec = new SR() as any
     rec.lang = LANG_TO_BCP47[lang]
-    rec.interimResults = false
+    rec.interimResults = true
+    rec.continuous = false
     rec.maxAlternatives = 1
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rec.onresult = (e: any) => {
-      const transcript = e.results[0][0].transcript
-      setInput(transcript)
+      let interim = ''
+      let final = ''
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript
+        if (e.results[i].isFinal) final += t
+        else interim += t
+      }
+      setInput(final || interim)
+      if (final) setListening(false)
+    }
+    rec.onerror = (e: any) => {
+      console.error('Speech error:', e.error)
       setListening(false)
     }
-    rec.onerror = () => setListening(false)
     rec.onend = () => setListening(false)
     recognitionRef.current = rec
-    rec.start()
-    setListening(true)
+    try {
+      rec.start()
+      setListening(true)
+    } catch {
+      setListening(false)
+    }
   }
 
   const waUrl = `https://wa.me/8618859718326?text=${encodeURIComponent(ui.waText)}`
