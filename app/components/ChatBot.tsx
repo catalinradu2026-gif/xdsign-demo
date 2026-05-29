@@ -116,9 +116,8 @@ export default function ChatBot() {
     }
   }, [messages, open])
 
-  async function send() {
-    const text = input.trim()
-    if (!text || loading) return
+  async function sendText(text: string) {
+    if (!text.trim() || loading) return
     const userMsg: Message = { role: 'user', content: text }
     const newMessages = [...messages, userMsg]
     setMessages(newMessages)
@@ -144,6 +143,10 @@ export default function ChatBot() {
     }
   }
 
+  async function send() {
+    sendText(input.trim())
+  }
+
   async function toggleMic() {
     if (listening) {
       mediaRecorderRef.current?.stop()
@@ -167,7 +170,10 @@ export default function ChatBot() {
           fd.append('lang', lang)
           const res = await fetch('/api/transcribe', { method: 'POST', body: fd })
           const data = await res.json()
-          if (data.text) setInput(data.text)
+          if (data.text) {
+            setInput(data.text)
+            sendText(data.text)
+          }
         } finally {
           setTranscribing(false)
         }
