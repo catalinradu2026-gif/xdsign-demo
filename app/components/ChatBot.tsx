@@ -159,19 +159,18 @@ export default function ChatBot() {
     const rec = new SR() as any
     rec.lang = LANG_TO_BCP47[lang]
     rec.interimResults = true
-    rec.continuous = false
+    rec.continuous = true
     rec.maxAlternatives = 1
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let accumulated = ''
     rec.onresult = (e: any) => {
       let interim = ''
-      let final = ''
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const t = e.results[i][0].transcript
-        if (e.results[i].isFinal) final += t
-        else interim += t
+        if (e.results[i].isFinal) accumulated += t
+        else interim = t
       }
-      setInput(final || interim)
-      if (final) setListening(false)
+      setInput(accumulated + interim)
     }
     rec.onerror = (e: any) => {
       console.error('Speech error:', e.error)
