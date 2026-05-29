@@ -1,7 +1,7 @@
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import Products from './components/Products'
-import CalculatorSection from './components/CalculatorSection'
+import Calculator from './components/Calculator'
 import Contact from './components/Contact'
 import ChatBot from './components/ChatBot'
 import { useLang } from './LangContext'
@@ -21,7 +21,7 @@ export default function Home() {
       <Navbar />
       <Hero />
       <Products />
-      <CalculatorSection />
+      <Calculator />
       <Contact />
       <Footer />
       <ChatBot />
