@@ -71,10 +71,13 @@ export default function ChatBot() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [speaking, setSpeaking] = useState(false)
+  const [listening, setListening] = useState(false)
   const [bubbleIdx, setBubbleIdx] = useState(0)
   const [showBubble, setShowBubble] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null)
 
   // Update welcome message when lang changes (no user messages yet)
   useEffect(() => {
@@ -134,6 +137,39 @@ export default function ChatBot() {
       setLoading(false)
     }
   }
+
+  function toggleMic() {
+    if (listening) {
+      recognitionRef.current?.stop()
+      setListening(false)
+      return
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition
+    if (!SR) return
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rec = new SR() as any
+    rec.lang = LANG_TO_BCP47[lang]
+    rec.interimResults = false
+    rec.maxAlternatives = 1
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rec.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript
+      setInput(transcript)
+      setListening(false)
+    }
+    rec.onerror = () => setListening(false)
+    rec.onend = () => setListening(false)
+    recognitionRef.current = rec
+    rec.start()
+    setListening(true)
+  }
+
+  const hasMic = typeof window !== 'undefined' && !!(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+  )
 
   const waUrl = `https://wa.me/8618859718326?text=${encodeURIComponent(ui.waText)}`
 
@@ -221,13 +257,31 @@ export default function ChatBot() {
 
           {/* Input */}
           <div className="border-t border-white/5 p-3 flex gap-2 bg-zinc-950">
+            {hasMic && (
+              <button
+                onClick={toggleMic}
+                className={`w-10 h-10 flex items-center justify-center transition-all flex-shrink-0 border ${
+                  listening
+                    ? 'bg-red-500 border-red-400 animate-pulse'
+                    : 'bg-zinc-800 border-white/10 hover:border-xblue/50 text-white/60 hover:text-white'
+                }`}
+                title={listening ? 'Stop' : lang === 'zh' ? '语音输入' : lang === 'ro' ? 'Vorbește' : 'Voice input'}
+              >
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 14a3 3 0 003-3V5a3 3 0 00-6 0v6a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 0014 0h-2zm-5 9v-2a7 7 0 007-7h-2a5 5 0 01-10 0H5a7 7 0 007 7v2z"/>
+                </svg>
+              </button>
+            )}
             <input
               ref={inputRef}
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && send()}
-              placeholder={ui.placeholder}
+              placeholder={listening
+                ? (lang === 'zh' ? '正在听...' : lang === 'ro' ? 'Ascult...' : lang === 'de' ? 'Höre zu...' : lang === 'it' ? 'Ascolto...' : lang === 'fr' ? 'J\'écoute...' : 'Listening...')
+                : ui.placeholder
+              }
               className="flex-1 bg-zinc-900 border border-white/10 text-white placeholder-white/30 px-3 py-2.5 text-sm focus:outline-none focus:border-xblue/50 transition-colors"
               style={{ fontSize: '16px' }}
             />
