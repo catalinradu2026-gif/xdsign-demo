@@ -9,6 +9,24 @@ interface Message {
   content: string
 }
 
+const PRICE_KEYWORDS = ['USD', 'TOTAL', '报价', '总计', '估价', '运费', '价格', 'preț', 'total', 'Preis', 'prezzo', 'prix', 'shipping', 'livrare', 'transport']
+
+function isCalculation(text: string): boolean {
+  return PRICE_KEYWORDS.some(kw => text.includes(kw)) && /\d+/.test(text)
+}
+
+function buildWaQuoteText(quote: string, lang: Lang): string {
+  const intro: Record<Lang, string> = {
+    zh: '您好！我通过XD Sign网站的AVA助手获得了以下报价，希望确认订单：\n\n',
+    en: 'Hello! I received the following quote from AVA on your website and would like to confirm the order:\n\n',
+    ro: 'Bună ziua! Am primit următoarea ofertă de la AVA pe site-ul dvs. și doresc să confirm comanda:\n\n',
+    de: 'Hallo! Ich habe folgendes Angebot von AVA auf Ihrer Website erhalten und möchte die Bestellung bestätigen:\n\n',
+    it: 'Salve! Ho ricevuto il seguente preventivo da AVA sul vostro sito e vorrei confermare l\'ordine:\n\n',
+    fr: 'Bonjour ! J\'ai reçu le devis suivant d\'AVA sur votre site et je souhaite confirmer la commande :\n\n',
+  }
+  return intro[lang] + quote
+}
+
 const LANG_TO_BCP47: Record<Lang, string> = {
   zh: 'zh-CN',
   en: 'en-US',
@@ -145,7 +163,8 @@ export default function ChatBot() {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-black/40">
             {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div key={i} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+                <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}>
                 {m.role === 'assistant' && (
                   <div className="w-6 h-6 rounded-full bg-xblue flex items-center justify-center text-white text-xs font-bold mr-2 flex-shrink-0 mt-0.5">A</div>
                 )}
@@ -156,6 +175,21 @@ export default function ChatBot() {
                 }`}>
                   {m.content}
                 </div>
+                </div>
+                {/* WhatsApp quote button — appears only on assistant messages that contain a price calculation */}
+                {m.role === 'assistant' && isCalculation(m.content) && (
+                  <a
+                    href={`https://wa.me/8618859718326?text=${encodeURIComponent(buildWaQuoteText(m.content, lang))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-8 mt-1 flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] hover:bg-[#20b857] text-white text-xs font-semibold rounded-full transition-colors"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white flex-shrink-0">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                    {lang === 'zh' ? '发送报价到WhatsApp' : lang === 'ro' ? 'Trimite oferta pe WhatsApp' : lang === 'de' ? 'Angebot per WhatsApp senden' : lang === 'it' ? 'Invia preventivo su WhatsApp' : lang === 'fr' ? 'Envoyer devis sur WhatsApp' : 'Send quote to WhatsApp'}
+                  </a>
+                )}
               </div>
             ))}
             {loading && (
