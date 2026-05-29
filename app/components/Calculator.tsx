@@ -43,6 +43,7 @@ interface UIStrings {
   calcBtn: string; types: string[]; mats: string[]; dests: string[]
   destKeys: string[]
   signPreview: string; downloadBtn: string; shareWaBtn: string; shareWcBtn: string; shareNote: string
+  wcModalTitle: string; wcModalSub: string; wcModalClose: string
   result: {
     letters: string; pricePerLetter: string; subtotal: string; discount: string
     shipping: string; total: string; note: string; waBtn: string
@@ -65,6 +66,7 @@ const UI: Record<Lang, UIStrings> = {
     signPreview: '招牌效果预览图', downloadBtn: '下载预览图',
     shareWaBtn: '直接发送到WhatsApp', shareWcBtn: '发送到微信',
     shareNote: '预览图已生成 — 请下载后通过WhatsApp发送给我们。',
+    wcModalTitle: '长按图片 → 保存 → 转发到微信', wcModalSub: '保存图片后，打开微信发送给好友或分享到朋友圈', wcModalClose: '关闭',
     result: {
       letters: '字母数', pricePerLetter: '每字价格', subtotal: '小计',
       discount: '数量折扣', shipping: '运费估算（海运）', total: '总计估算',
@@ -87,6 +89,7 @@ const UI: Record<Lang, UIStrings> = {
     signPreview: 'Sign Preview', downloadBtn: 'Download Preview',
     shareWaBtn: 'Share directly to WhatsApp', shareWcBtn: 'Send to WeChat',
     shareNote: 'Preview generated — download and attach it in WhatsApp.',
+    wcModalTitle: 'Long press image → Save → Share on WeChat', wcModalSub: 'Save the image then open WeChat to send to a contact or post to Moments', wcModalClose: 'Close',
     result: {
       letters: 'Letters', pricePerLetter: 'Price/letter', subtotal: 'Subtotal',
       discount: 'Qty discount', shipping: 'Shipping estimate (sea)', total: 'TOTAL ESTIMATE',
@@ -109,6 +112,7 @@ const UI: Record<Lang, UIStrings> = {
     signPreview: 'Previzualizare Indicator', downloadBtn: 'Descarcă Preview',
     shareWaBtn: 'Trimite direct pe WhatsApp', shareWcBtn: 'Trimite pe WeChat',
     shareNote: 'Preview generat — descarcă și atașează pe WhatsApp.',
+    wcModalTitle: 'Apasă lung pe imagine → Salvează → Trimite pe WeChat', wcModalSub: 'Salvează imaginea apoi deschide WeChat pentru a o trimite', wcModalClose: 'Închide',
     result: {
       letters: 'Litere', pricePerLetter: 'Preț/literă', subtotal: 'Subtotal',
       discount: 'Reducere cant.', shipping: 'Transport estimat (maritim)', total: 'TOTAL ESTIMAT',
@@ -131,6 +135,7 @@ const UI: Record<Lang, UIStrings> = {
     signPreview: 'Schild-Vorschau', downloadBtn: 'Vorschau herunterladen',
     shareWaBtn: 'Direkt auf WhatsApp teilen', shareWcBtn: 'Auf WeChat senden',
     shareNote: 'Vorschau erstellt — herunterladen und per WhatsApp anhängen.',
+    wcModalTitle: 'Bild lang drücken → Speichern → Auf WeChat teilen', wcModalSub: 'Bild speichern und in WeChat an einen Kontakt senden', wcModalClose: 'Schließen',
     result: {
       letters: 'Buchstaben', pricePerLetter: 'Preis/Buchstabe', subtotal: 'Zwischensumme',
       discount: 'Mengenrabatt', shipping: 'Versandschätzung (Seeweg)', total: 'GESAMTSCHÄTZUNG',
@@ -153,6 +158,7 @@ const UI: Record<Lang, UIStrings> = {
     signPreview: 'Anteprima Insegna', downloadBtn: 'Scarica Anteprima',
     shareWaBtn: 'Condividi direttamente su WhatsApp', shareWcBtn: 'Invia su WeChat',
     shareNote: 'Anteprima generata — scaricala e allegala su WhatsApp.',
+    wcModalTitle: 'Tieni premuta immagine → Salva → Condividi su WeChat', wcModalSub: "Salva l'immagine e aprila in WeChat per inviarla", wcModalClose: 'Chiudi',
     result: {
       letters: 'Lettere', pricePerLetter: 'Prezzo/lettera', subtotal: 'Subtotale',
       discount: 'Sconto quantità', shipping: 'Spedizione stimata (marittima)', total: 'TOTALE STIMATO',
@@ -175,6 +181,7 @@ const UI: Record<Lang, UIStrings> = {
     signPreview: 'Aperçu Enseigne', downloadBtn: 'Télécharger Aperçu',
     shareWaBtn: 'Partager directement sur WhatsApp', shareWcBtn: 'Envoyer sur WeChat',
     shareNote: 'Aperçu généré — téléchargez et joignez sur WhatsApp.',
+    wcModalTitle: 'Appui long sur image → Enregistrer → Partager sur WeChat', wcModalSub: "Enregistrez l'image puis ouvrez WeChat pour l'envoyer", wcModalClose: 'Fermer',
     result: {
       letters: 'Lettres', pricePerLetter: 'Prix/lettre', subtotal: 'Sous-total',
       discount: 'Remise quantité', shipping: 'Expédition estimée (maritime)', total: 'TOTAL ESTIMÉ',
@@ -343,6 +350,7 @@ export default function Calculator() {
   const [totalWidth, setTotalWidth] = useState('')
   const [widthUnit, setWidthUnit] = useState<'mm' | 'cm' | 'm'>('mm')
   const [result, setResult] = useState<CalcResult | null>(null)
+  const [wcModal, setWcModal] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [canShare, setCanShare] = useState(false)
 
@@ -593,7 +601,7 @@ export default function Calculator() {
                             {ui.shareWaBtn}
                           </button>
                           <button
-                            onClick={shareImage}
+                            onClick={() => setWcModal(true)}
                             className="flex items-center gap-2 px-4 py-2.5 bg-[#07C160] hover:bg-[#06a050] text-white text-xs font-semibold tracking-wide transition-colors"
                           >
                             <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white flex-shrink-0">
@@ -657,6 +665,32 @@ export default function Calculator() {
           </div>
         )}
       </div>
+
+      {/* WeChat fullscreen modal */}
+      {wcModal && previewUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-6"
+          onClick={() => setWcModal(false)}
+        >
+          <div className="w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <img src={previewUrl} alt="Sign preview" className="w-full mb-6 border border-[#07C160]/40" />
+            <div className="bg-[#07C160]/10 border border-[#07C160]/30 p-5 text-center mb-4">
+              <svg viewBox="0 0 24 24" className="w-8 h-8 fill-[#07C160] mx-auto mb-3">
+                <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.295.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c-.098-.544-.147-1.104-.147-1.675 0-3.76 3.547-6.812 7.917-6.812.38 0 .753.025 1.12.07C15.9 4.348 12.554 2.188 8.691 2.188zm-2.361 3.06a1.062 1.062 0 1 1 0 2.125 1.062 1.062 0 0 1 0-2.125zm4.927 0a1.062 1.062 0 1 1 0 2.125 1.062 1.062 0 0 1 0-2.125zM24 14.465c0-3.399-3.188-6.155-7.124-6.155-3.937 0-7.124 2.756-7.124 6.155 0 3.4 3.187 6.155 7.124 6.155.748 0 1.467-.098 2.139-.28a.657.657 0 0 1 .54.074l1.428.836a.247.247 0 0 0 .126.041.222.222 0 0 0 .221-.221c0-.054-.021-.107-.036-.16l-.294-1.11a.444.444 0 0 1 .16-.5C23.086 18.17 24 16.405 24 14.465zm-9.491-1.24a.799.799 0 1 1 0-1.598.799.799 0 0 1 0 1.597zm4.733 0a.799.799 0 1 1 0-1.598.799.799 0 0 1 0 1.597z"/>
+              </svg>
+              <p className="text-[#07C160] font-bold text-base mb-1">{ui.wcModalTitle}</p>
+              <p className="text-white/60 text-sm">{ui.wcModalSub}</p>
+              <p className="text-white/30 text-xs mt-2">WeChat ID: xd-ledsign</p>
+            </div>
+            <button
+              onClick={() => setWcModal(false)}
+              className="w-full py-3 border border-white/20 text-white/50 text-sm hover:text-white transition-colors"
+            >
+              ✕ {ui.wcModalClose}
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
