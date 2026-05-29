@@ -72,18 +72,17 @@ export default function ChatBot() {
   const [loading, setLoading] = useState(false)
   const [speaking, setSpeaking] = useState(false)
   const [listening, setListening] = useState(false)
+  const [transcribing, setTranscribing] = useState(false)
   const [hasMic, setHasMic] = useState(false)
   const [bubbleIdx, setBubbleIdx] = useState(0)
   const [showBubble, setShowBubble] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const w = window as any
-    setHasMic(!!(w.SpeechRecognition || w.webkitSpeechRecognition))
+    setHasMic(!!navigator.mediaDevices?.getUserMedia)
   }, [])
 
   // Update welcome message when lang changes (no user messages yet)
@@ -145,41 +144,36 @@ export default function ChatBot() {
     }
   }
 
-  function toggleMic() {
+  async function toggleMic() {
     if (listening) {
-      recognitionRef.current?.stop()
+      mediaRecorderRef.current?.stop()
       setListening(false)
       return
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const w = window as any
-    const SR = w.SpeechRecognition || w.webkitSpeechRecognition
-    if (!SR) return
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rec = new SR() as any
-    rec.lang = LANG_TO_BCP47[lang]
-    rec.interimResults = true
-    rec.continuous = true
-    rec.maxAlternatives = 1
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let accumulated = ''
-    rec.onresult = (e: any) => {
-      let interim = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript
-        if (e.results[i].isFinal) accumulated += t
-        else interim = t
-      }
-      setInput(accumulated + interim)
-    }
-    rec.onerror = (e: any) => {
-      console.error('Speech error:', e.error)
-      setListening(false)
-    }
-    rec.onend = () => setListening(false)
-    recognitionRef.current = rec
     try {
-      rec.start()
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/ogg'
+      const recorder = new MediaRecorder(stream, { mimeType })
+      chunksRef.current = []
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        const blob = new Blob(chunksRef.current, { type: mimeType })
+        if (blob.size < 500) return
+        setTranscribing(true)
+        try {
+          const fd = new FormData()
+          fd.append('audio', blob, `rec.${mimeType.includes('webm') ? 'webm' : 'ogg'}`)
+          fd.append('lang', lang)
+          const res = await fetch('/api/transcribe', { method: 'POST', body: fd })
+          const data = await res.json()
+          if (data.text) setInput(data.text)
+        } finally {
+          setTranscribing(false)
+        }
+      }
+      mediaRecorderRef.current = recorder
+      recorder.start()
       setListening(true)
     } catch {
       setListening(false)
@@ -275,10 +269,13 @@ export default function ChatBot() {
             {hasMic && (
               <button
                 onClick={toggleMic}
+                disabled={transcribing}
                 className={`w-10 h-10 flex items-center justify-center transition-all flex-shrink-0 border ${
-                  listening
-                    ? 'bg-red-500 border-red-400 animate-pulse'
-                    : 'bg-zinc-800 border-white/10 hover:border-xblue/50 text-white/60 hover:text-white'
+                  transcribing
+                    ? 'bg-yellow-500 border-yellow-400 animate-pulse'
+                    : listening
+                      ? 'bg-red-500 border-red-400 animate-pulse'
+                      : 'bg-zinc-800 border-white/10 hover:border-xblue/50 text-white/60 hover:text-white'
                 }`}
                 title={listening ? 'Stop' : lang === 'zh' ? '语音输入' : lang === 'ro' ? 'Vorbește' : 'Voice input'}
               >
@@ -293,9 +290,11 @@ export default function ChatBot() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && send()}
-              placeholder={listening
-                ? (lang === 'zh' ? '正在听...' : lang === 'ro' ? 'Ascult...' : lang === 'de' ? 'Höre zu...' : lang === 'it' ? 'Ascolto...' : lang === 'fr' ? 'J\'écoute...' : 'Listening...')
-                : ui.placeholder
+              placeholder={transcribing
+                ? (lang === 'zh' ? '正在转录...' : lang === 'ro' ? 'Transcriere...' : lang === 'de' ? 'Transkribiere...' : lang === 'it' ? 'Trascrizione...' : lang === 'fr' ? 'Transcription...' : 'Transcribing...')
+                : listening
+                  ? (lang === 'zh' ? '🎙 正在录音... 再点一次停止' : lang === 'ro' ? '🎙 Înregistrez... Click din nou oprire' : lang === 'de' ? '🎙 Aufnahme... Erneut klicken zum Stoppen' : lang === 'it' ? '🎙 Registrazione... Clicca di nuovo per fermare' : lang === 'fr' ? '🎙 Enregistrement... Cliquez à nouveau pour arrêter' : '🎙 Recording... Click again to stop')
+                  : ui.placeholder
               }
               className="flex-1 bg-zinc-900 border border-white/10 text-white placeholder-white/30 px-3 py-2.5 text-sm focus:outline-none focus:border-xblue/50 transition-colors"
               style={{ fontSize: '16px' }}
