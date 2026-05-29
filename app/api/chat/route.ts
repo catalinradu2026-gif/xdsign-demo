@@ -121,27 +121,31 @@ interface Msg {
 }
 
 export async function POST(req: NextRequest) {
-  const { messages, lang = 'zh' } = await req.json() as { messages: Msg[]; lang?: string }
+  try {
+    const { messages, lang = 'zh' } = await req.json() as { messages: Msg[]; lang?: string }
 
-  const langInstruction = `\n\n═══ LANGUAGE ═══\nYou MUST respond exclusively in: ${LANG_LABEL[lang] || 'English'}. Do not switch languages.`
+    const langInstruction = `\n\n═══ LANGUAGE ═══\nYou MUST respond exclusively in: ${LANG_LABEL[lang] || 'English'}. Do not switch languages.`
+    const systemContent = SYSTEM_PROMPT + langInstruction
 
-  const systemContent = SYSTEM_PROMPT + langInstruction
+    const history = messages.slice(-12).map((m: Msg) => ({
+      role: m.role,
+      content: m.content,
+    }))
 
-  const history = messages.slice(-12).map((m: Msg) => ({
-    role: m.role,
-    content: m.content,
-  }))
+    const completion = await getGroq().chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: systemContent },
+        ...history,
+      ],
+      max_tokens: 600,
+      temperature: 0.4,
+    })
 
-  const completion = await getGroq().chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages: [
-      { role: 'system', content: systemContent },
-      ...history,
-    ],
-    max_tokens: 600,
-    temperature: 0.4,
-  })
-
-  const text = completion.choices[0]?.message?.content || '...'
-  return NextResponse.json({ reply: fixBrand(text) })
+    const text = completion.choices[0]?.message?.content || '...'
+    return NextResponse.json({ reply: fixBrand(text) })
+  } catch (err) {
+    console.error('Chat API error:', err)
+    return NextResponse.json({ reply: '...' }, { status: 200 })
+  }
 }
