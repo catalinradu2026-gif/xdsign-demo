@@ -20,7 +20,7 @@ export default function Products() {
           {tr.items.map((item, i) => (
             <div
               key={i}
-              className="border border-white/8 bg-black/40 p-8 hover:border-xblue/40 transition-all duration-300 group"
+              className="border border-white/8 bg-black/40 p-8 hover:border-xblue/40 transition-all duration-300 group flex flex-col"
             >
               <div className="flex items-start justify-between mb-4">
                 <span className="text-xblue text-2xl">{ICONS[i]}</span>
@@ -31,7 +31,15 @@ export default function Products() {
               <h3 className="font-serif text-xl text-white mb-3 group-hover:text-xblue-light transition-colors">
                 {item.name}
               </h3>
-              <p className="text-white/40 text-sm leading-relaxed">{item.desc}</p>
+              <p className="text-white/50 text-sm leading-relaxed mb-5">{item.desc}</p>
+              <ul className="mt-auto space-y-1.5">
+                {item.features.map((f, j) => (
+                  <li key={j} className="flex items-start gap-2 text-xs text-white/40">
+                    <span className="text-xblue mt-0.5 flex-shrink-0">›</span>
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           ))}
         </div>

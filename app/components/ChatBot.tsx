@@ -72,12 +72,19 @@ export default function ChatBot() {
   const [loading, setLoading] = useState(false)
   const [speaking, setSpeaking] = useState(false)
   const [listening, setListening] = useState(false)
+  const [hasMic, setHasMic] = useState(false)
   const [bubbleIdx, setBubbleIdx] = useState(0)
   const [showBubble, setShowBubble] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null)
+
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any
+    setHasMic(!!(w.SpeechRecognition || w.webkitSpeechRecognition))
+  }, [])
 
   // Update welcome message when lang changes (no user messages yet)
   useEffect(() => {
@@ -165,11 +172,6 @@ export default function ChatBot() {
     rec.start()
     setListening(true)
   }
-
-  const hasMic = typeof window !== 'undefined' && !!(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-  )
 
   const waUrl = `https://wa.me/8618859718326?text=${encodeURIComponent(ui.waText)}`
 
