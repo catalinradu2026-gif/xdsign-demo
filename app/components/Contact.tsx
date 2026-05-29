@@ -6,7 +6,7 @@ export default function Contact() {
   const { lang } = useLang()
   const tr = t[lang].contact
 
-  const waUrl = `https://wa.me/8618859718326?text=${encodeURIComponent(t[lang].chat.waText)}`
+  const waUrl = `https://wa.me/8618859722389?text=${encodeURIComponent(t[lang].chat.waText)}`
 
   return (
     <section id="contact" className="py-32 bg-zinc-950 border-t border-white/5 scroll-mt-20">

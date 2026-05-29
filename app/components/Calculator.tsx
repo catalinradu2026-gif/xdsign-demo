@@ -337,7 +337,7 @@ export default function Calculator() {
                 <p className="text-white/30 text-xs text-center mb-6">{ui.result.note}</p>
 
                 <a
-                  href={`https://wa.me/8618859718326?text=${encodeURIComponent(buildWaText())}`}
+                  href={`https://wa.me/8618859722389?text=${encodeURIComponent(buildWaText())}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-3 w-full py-4 bg-[#25D366] hover:bg-[#20b857] text-white font-semibold text-sm tracking-wide transition-colors"

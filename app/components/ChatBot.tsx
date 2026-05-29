@@ -186,7 +186,7 @@ export default function ChatBot() {
     }
   }
 
-  const waUrl = `https://wa.me/8618859718326?text=${encodeURIComponent(ui.waText)}`
+  const waUrl = `https://wa.me/8618859722389?text=${encodeURIComponent(ui.waText)}`
 
   return (
     <>
@@ -230,7 +230,7 @@ export default function ChatBot() {
                 {/* WhatsApp quote button — appears only on assistant messages that contain a price calculation */}
                 {m.role === 'assistant' && isCalculation(m.content) && (
                   <a
-                    href={`https://wa.me/8618859718326?text=${encodeURIComponent(buildWaQuoteText(m.content, lang))}`}
+                    href={`https://wa.me/8618859722389?text=${encodeURIComponent(buildWaQuoteText(m.content, lang))}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="ml-8 mt-1 flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] hover:bg-[#20b857] text-white text-xs font-semibold rounded-full transition-colors"
