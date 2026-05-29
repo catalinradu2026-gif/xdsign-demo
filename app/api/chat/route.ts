@@ -145,7 +145,8 @@ export async function POST(req: NextRequest) {
     const text = completion.choices[0]?.message?.content || '...'
     return NextResponse.json({ reply: fixBrand(text) })
   } catch (err) {
-    console.error('Chat API error:', err)
-    return NextResponse.json({ reply: '...' }, { status: 200 })
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('Chat API error:', msg)
+    return NextResponse.json({ reply: '...', debug: msg }, { status: 200 })
   }
 }
